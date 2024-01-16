@@ -149,9 +149,10 @@ class _MyTableWidgetState extends State<MyTableWidget> {
     List<String> keysList = allPrefsKeys.toList();
 
     for (String key in keysList) {
-      tasks.add(key);
+      setState(() {
+        tasks.add(key);
+      });
     }
-
 
     print("Wczytanie elementów z listy $tasks");
   }
@@ -159,7 +160,6 @@ class _MyTableWidgetState extends State<MyTableWidget> {
   Future<void> _initializeData() async {
     await StartAddElementFromSharedPreferences();
     await displayAllSharedPreferences();
-    //await removeTasksFromSharedPreferences();
   }
 
   Future<void> displayAllSharedPreferences() async {
@@ -170,12 +170,4 @@ class _MyTableWidgetState extends State<MyTableWidget> {
       print('Klucz: $key, Wartość: ${prefs.get(key)}');
     });
   }
-
-  // Future<void> removeTasksFromSharedPreferences() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   await prefs.remove('klucz_tasks');
-  //   print('Element o kluczu klucz_tasks został usunięty z SharedPreferences.');
-  // }
-
-
 }
