@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +17,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class MyTableWidget extends StatefulWidget {
   const MyTableWidget({Key? key}) : super(key: key);
 
@@ -29,17 +25,15 @@ class MyTableWidget extends StatefulWidget {
 }
 
 class _MyTableWidgetState extends State<MyTableWidget> {
-  @override // Wyświetlenie zadań
-  void initState() {
-    super.initState();
-    _initializeData();
-  }
-
   List<String> tasks = [];
   String selectedPriority = 'A';
   final TextEditingController taskController = TextEditingController();
 
-
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +74,7 @@ class _MyTableWidgetState extends State<MyTableWidget> {
                 ),
                 SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: addTask,
+                  onPressed: () => addTask(),
                   child: Text('Dodaj Zadanie'),
                 ),
               ],
@@ -110,49 +104,88 @@ class _MyTableWidgetState extends State<MyTableWidget> {
     if (taskController.text.isNotEmpty) {
       setState(() {
         tasks.add(newTask);
-        addElementToSharedPreferences(newTask);
+        addElementToSharedPreferences(newTask, false);
         taskController.clear();
       });
     }
   }
+  Future<void> addElementToSharedPreferences(String taskKey, bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Pobierz istniejącą mapę z SharedPreferences za pomocą klucza
+    Map<String, bool> existingMap = Map.fromEntries(
+      (prefs.getStringList('klucz_tasks') ?? []).map(
+            (entry) {
+          // Rozdziel klucz i wartość
+          List<String> parts = entry.split(':');
+          String key = parts[0].trim(); // Klucz
+          bool value = parts[1].trim() == 'true'; // Wartość
+          return MapEntry(key, value);
+        },
+      ),
+    );
+
+    // Sprawdź, czy zadanie o danym kluczu już istnieje
+    if (existingMap.containsKey(taskKey)) {
+      print('Zadanie o kluczu $taskKey już istnieje.');
+    } else {
+      // Dodaj nowy element do mapy
+      existingMap[taskKey] = value;
+
+      // Przekształć mapę na listę stringów przed zapisaniem do SharedPreferences
+      List<String> updatedList = existingMap.entries
+          .map((entry) => '${entry.key}: ${entry.value}')
+          .toList();
+
+      // Zapisz aktualną listę ponownie do SharedPreferences
+      prefs.setStringList('klucz_tasks', updatedList);
+
+      print('Nowy element dodany do SharedPreferences.');
+    }
+  }
+
 
   void removeTask(int index) async {
     setState(() {
-      tasks.removeAt(index);
+      if (index >= 0 && index < tasks.length) {
+        String zadanie = tasks[index];
+        tasks.removeAt(index);
+        removeTaskFromSharedPreferences(zadanie.trim());
+      }
     });
-    await saveTasksToSharedPreferences();
   }
 
-  Future<void> saveTasksToSharedPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('klucz_tasks', tasks);
-    print('Zaktualizowana lista zapisana do SharedPreferences.');
-  }
-
-  Future<void> addElementToSharedPreferences(String newElement) async {
+  Future<void> removeTaskFromSharedPreferences(String task) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Pobierz istniejącą listę z SharedPreferences za pomocą klucza
-    List<String> existingList = prefs.getStringList('klucz_tasks') ?? [];
+    String zadanie = " " + task;
 
-    // dodawanie nowego elementu do listy
-    existingList.add(newElement);
+    prefs.remove(zadanie.trim());
 
-    // Zapisanie aktualną listę z ponownie do SharedPreferences
-    prefs.setStringList('klucz_tasks', existingList);
-
-    print('Nowy element dodany do SharedPreferences.');
+    print('Zadanie o kluczu $zadanie zostało usunięte z SharedPreferences.');
   }
 
   Future<void> StartAddElementFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
 
-    tasks = prefs.getStringList('klucz_tasks') ?? [];
-    print("wczytanie elementów z listy $tasks");
+    List<String> existingList = prefs.getStringList('klucz_tasks') ?? [];
+
+    tasks.addAll(existingList);
+
+    print("Wczytanie elementów z listy $tasks");
   }
+
   Future<void> _initializeData() async {
     await StartAddElementFromSharedPreferences();
+    await displayAllSharedPreferences();
   }
 
+  Future<void> displayAllSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    Set<String> allPrefsKeys = prefs.getKeys();
 
+    allPrefsKeys.forEach((key) {
+      print('Klucz: $key, Wartość: ${prefs.get(key)}');
+    });
+  }
 }
