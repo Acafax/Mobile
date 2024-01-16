@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
-//koko
-//koko
-//koko
-//koko
-//koko
-
 void main() {
   runApp(const MyApp());
 }
