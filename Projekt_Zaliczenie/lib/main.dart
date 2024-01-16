@@ -109,48 +109,25 @@ class _MyTableWidgetState extends State<MyTableWidget> {
       });
     }
   }
-  Future<void> addElementToSharedPreferences(String taskKey, bool value) async {
+
+  Future<void> addElementToSharedPreferences(String newTask, bool value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Pobierz istniejącą mapę z SharedPreferences za pomocą klucza
-    Map<String, bool> existingMap = Map.fromEntries(
-      (prefs.getStringList('klucz_tasks') ?? []).map(
-            (entry) {
-          // Rozdziel klucz i wartość
-          List<String> parts = entry.split(':');
-          String key = parts[0].trim(); // Klucz
-          bool value = parts[1].trim() == 'true'; // Wartość
-          return MapEntry(key, value);
-        },
-      ),
-    );
+    prefs.setBool(newTask, value);
 
-    // Sprawdź, czy zadanie o danym kluczu już istnieje
-    if (existingMap.containsKey(taskKey)) {
-      print('Zadanie o kluczu $taskKey już istnieje.');
-    } else {
-      // Dodaj nowy element do mapy
-      existingMap[taskKey] = value;
-
-      // Przekształć mapę na listę stringów przed zapisaniem do SharedPreferences
-      List<String> updatedList = existingMap.entries
-          .map((entry) => '${entry.key}: ${entry.value}')
-          .toList();
-
-      // Zapisz aktualną listę ponownie do SharedPreferences
-      prefs.setStringList('klucz_tasks', updatedList);
-
-      print('Nowy element dodany do SharedPreferences.');
-    }
+    print('Nowy element dodany do SharedPreferences.');
   }
-
 
   void removeTask(int index) async {
     setState(() {
       if (index >= 0 && index < tasks.length) {
-        String zadanie = tasks[index];
+        String removedTask = tasks[index];
+
+        // Usuń zadanie z listy
         tasks.removeAt(index);
-        removeTaskFromSharedPreferences(zadanie.trim());
+
+        // Usuń zadanie z SharedPreferences
+        removeTaskFromSharedPreferences(removedTask.trim());
       }
     });
   }
@@ -168,9 +145,13 @@ class _MyTableWidgetState extends State<MyTableWidget> {
   Future<void> StartAddElementFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
 
-    List<String> existingList = prefs.getStringList('klucz_tasks') ?? [];
+    Set<String> allPrefsKeys = prefs.getKeys();
+    List<String> keysList = allPrefsKeys.toList();
 
-    tasks.addAll(existingList);
+    for (String key in keysList) {
+      tasks.add(key);
+    }
+
 
     print("Wczytanie elementów z listy $tasks");
   }
@@ -178,6 +159,7 @@ class _MyTableWidgetState extends State<MyTableWidget> {
   Future<void> _initializeData() async {
     await StartAddElementFromSharedPreferences();
     await displayAllSharedPreferences();
+    //await removeTasksFromSharedPreferences();
   }
 
   Future<void> displayAllSharedPreferences() async {
@@ -188,4 +170,12 @@ class _MyTableWidgetState extends State<MyTableWidget> {
       print('Klucz: $key, Wartość: ${prefs.get(key)}');
     });
   }
+
+  // Future<void> removeTasksFromSharedPreferences() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   await prefs.remove('klucz_tasks');
+  //   print('Element o kluczu klucz_tasks został usunięty z SharedPreferences.');
+  // }
+
+
 }
