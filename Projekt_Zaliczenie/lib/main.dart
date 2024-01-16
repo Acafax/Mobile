@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
+
+//sprawdzam
+//sprawdzam
+//sprawdzam
+//sprawdzam
+//sprawdzam
+//sprawdzam
+//sprawdzam
 void main() {
   runApp(const MyApp());
 }
