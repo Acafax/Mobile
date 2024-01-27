@@ -26,6 +26,8 @@ class MyTableWidget extends StatefulWidget {
 
 class _MyTableWidgetState extends State<MyTableWidget> {
   List<String> tasks = [];
+  List<String> finishedTasks = [];
+  List<bool> taskStatus = [];
   String selectedPriority = 'A';
   final TextEditingController taskController = TextEditingController();
 
@@ -84,13 +86,24 @@ class _MyTableWidgetState extends State<MyTableWidget> {
               shrinkWrap: true,
               itemCount: tasks.length,
               itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(tasks[index]),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () => removeTask(index),
-                  ),
-                );
+                Color backgroundColor = taskStatus[index] ? Colors.lightGreen : Colors.redAccent;
+
+                if (tasks.isNotEmpty) {
+                  return ListTile(
+                    title: Text(tasks[index]),
+                    tileColor: backgroundColor,
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () => removeTask(index),
+                    ),
+                    leading: IconButton(
+                      icon: Icon(Icons.check_circle),
+                      onPressed: () => addFinishedTask(index),
+                    ),
+                  );
+                } else {
+                  return SizedBox.shrink(); // Jeśli lista jest pusta, zwróć pusty widżet
+                }
               },
             ),
           ],
@@ -104,16 +117,17 @@ class _MyTableWidgetState extends State<MyTableWidget> {
     if (taskController.text.isNotEmpty) {
       setState(() {
         tasks.add(newTask);
-        addElementToSharedPreferences(newTask, false);
+        taskStatus.add(false);
+        addElementToSharedPreferences(newTask);
         taskController.clear();
       });
     }
   }
 
-  Future<void> addElementToSharedPreferences(String newTask, bool value) async {
+  Future<void> addElementToSharedPreferences(String newTask) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    prefs.setBool(newTask, value);
+    prefs.setBool(newTask, false);
 
     print('Nowy element dodany do SharedPreferences.');
   }
@@ -149,8 +163,10 @@ class _MyTableWidgetState extends State<MyTableWidget> {
     List<String> keysList = allPrefsKeys.toList();
 
     for (String key in keysList) {
+      bool status = prefs.getBool(key) ?? false; //brak wartości od razu zamienia na false
       setState(() {
         tasks.add(key);
+        taskStatus.add(status);
       });
     }
 
@@ -160,6 +176,9 @@ class _MyTableWidgetState extends State<MyTableWidget> {
   Future<void> _initializeData() async {
     await StartAddElementFromSharedPreferences();
     await displayAllSharedPreferences();
+    print(taskStatus);
+    // print("--------------");
+    // await displayfinishedTasks();
   }
 
   Future<void> displayAllSharedPreferences() async {
@@ -170,4 +189,27 @@ class _MyTableWidgetState extends State<MyTableWidget> {
       print('Klucz: $key, Wartość: ${prefs.get(key)}');
     });
   }
+  // Future<void> displayfinishedTasks() async {
+  //   SharedPreferences prefs2 = await SharedPreferences.getInstance();
+  //   Set<String> allPrefsKeys = prefs2.getKeys();
+  //
+  //   allPrefsKeys.forEach((key) {
+  //     print('Klucz: $key, Wartość: ${prefs2.get(key)}');
+  //   });
+  // }
+
+Future<void> addFinishedTask(int index) async {
+  SharedPreferences prefs2 = await SharedPreferences.getInstance();
+
+  String zadanko = tasks[index];
+
+  setState(() {
+    taskStatus[index] = true;
+  });
+
+  prefs2.setBool(zadanko,true);
+  print('Zadanie o kluczu $zadanko zostało dodane z SharedPreferences.');
+
+  //finishedTasks.add(task);
+}
 }
